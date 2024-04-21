@@ -1,7 +1,5 @@
 <template>
-  <div class="connections">
-    <canvas id="pixi"></canvas>
-  </div>
+  <canvas id="pixi"></canvas>
 </template>
 
 <script lang="ts">
@@ -11,21 +9,18 @@ import { Spritesheet } from "@pixi/spritesheet";
 import { AnimatedSprite } from "@pixi/sprite-animated";
 
 export default {
-  name: "ConnectionsLayer",
-
   methods: {
     async drawPixi() {
       var canvas = document.getElementById("pixi") as HTMLCanvasElement;
 
       const app = new Application({
-        width: window.innerWidth,
-        height: window.innerHeight,
+        resizeTo: canvas,
         antialias: true,
         view: canvas,
       });
 
-      const sheetJson = await fetch("./src/assets/spritesheet.json");
-      const sheetImage = await Assets.load("./src/assets/spritesheet.png");
+      const sheetJson = await fetch("./src/assets/monsters.json");
+      const sheetImage = await Assets.load("./src/assets/monsters.png");
 
       console.debug("Sheet image");
       console.debug(sheetImage);
@@ -45,17 +40,13 @@ export default {
 
       let y = 0;
       for (const monster of [
-        "goo",
-        "bee",
-        "rgoo",
-        "crab",
-        "franky",
-        "a1",
-        "a2",
-        "a3",
-        "a4",
-        "a5",
-        "a6",
+        "slenderman",
+        "chestm",
+        "dragold",
+        "squig",
+        "rat",
+        "mole",
+        "goo"
       ]) {
         let x = 50;
         let sprite: AnimatedSprite;
@@ -73,10 +64,10 @@ export default {
           sprite.animationSpeed = 0.1;
           sprite.play();
           app.stage.addChild(sprite);
-          x += 50;
+          x += sprite.width + 25;
         }
       }
-    },
+    }
   },
 
   mounted() {
@@ -84,3 +75,10 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+#pixi {
+  min-width: 100%;
+  min-height: 100%;
+}
+</style>

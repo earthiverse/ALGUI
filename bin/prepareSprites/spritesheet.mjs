@@ -3,71 +3,7 @@ import fs from "fs";
 import sharp from "sharp";
 import Spritesmith from "spritesmith";
 
-export const generateSpriteSheet = async (monsterName) => {
-  const dir = `./fixed/${monsterName}`;
-
-  Spritesmith.run(
-    {
-      src: [
-        `${dir}/1.png`,
-        `${dir}/2.png`,
-        `${dir}/3.png`,
-        `${dir}/4.png`,
-        `${dir}/5.png`,
-        `${dir}/6.png`,
-        `${dir}/7.png`,
-        `${dir}/8.png`,
-        `${dir}/9.png`,
-        `${dir}/10.png`,
-        `${dir}/11.png`,
-        `${dir}/12.png`,
-      ],
-    },
-    (error, result) => {
-      if (error) throw error;
-      fs.writeFileSync(`${dir}/base_fixed.png`, result.image);
-      console.log(result.coordinates);
-      console.log(result.properties);
-    }
-  );
-};
-
-export const generateSpriteSheet2 = async (monsterNames) => {
-  const images = [];
-
-  for (const monsterName of monsterNames) {
-    const dir = `./fixed/${monsterName}`;
-    images.push(
-      `${dir}/1.png`,
-      `${dir}/2.png`,
-      `${dir}/3.png`,
-      `${dir}/4.png`,
-      `${dir}/5.png`,
-      `${dir}/6.png`,
-      `${dir}/7.png`,
-      `${dir}/8.png`,
-      `${dir}/9.png`,
-      `${dir}/10.png`,
-      `${dir}/11.png`,
-      `${dir}/12.png`
-    );
-  }
-
-  Spritesmith.run(
-    {
-      algorithm: "binary-tree",
-      src: images,
-    },
-    (error, result) => {
-      if (error) throw error;
-      fs.writeFileSync(`./spritesheet.png`, result.image);
-      console.log(result.coordinates);
-      console.log(result.properties);
-    }
-  );
-};
-
-export const generateSpriteSheet3 = async (monsterNames) => {
+export const generateSpriteSheet = async (monsterNames) => {
   // Create the hashmap
   const anchors = new Map();
   const duplicates = new Map();

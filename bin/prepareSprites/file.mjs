@@ -29,11 +29,17 @@ export const ensureFolderExists = (path) => {
 
 export const downloadSkin = async (data) => {
   const originalFilename = `./original${url.parse(data.file).pathname}`;
+  const overrideFilename = `./overrides${url.parse(data.file).pathname}`;
 
   ensureFolderExists(originalFilename);
 
-  // Download the file if it doesn't exist
+  if (fs.existsSync(overrideFilename)) {
+    // We have an override for this file
+    console.debug(`Overriding ${originalFilename}...`);
+    fs.copyFileSync(overrideFilename, originalFilename);
+  }
   if (!fs.existsSync(originalFilename)) {
+    // The file doesn't exist, download it
     console.debug(`Downloading ${originalFilename}...`);
     const response = await axios({
       url: `${BASE_URL}${data.file}`,

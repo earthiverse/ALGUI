@@ -19,16 +19,14 @@ export const getMonsterSprites = async (data, monsterName) => {
   const top = data.row * spriteHeight;
 
   // Save the image
-  if (!fs.existsSync(monsterFilename)) {
-    await image
-      .extract({
-        left: left,
-        top: top,
-        width: spriteWidth,
-        height: spriteHeight,
-      })
-      .toFile(monsterFilename);
-  }
+  await image
+    .extract({
+      left: left,
+      top: top,
+      width: spriteWidth,
+      height: spriteHeight,
+    })
+    .toFile(monsterFilename);
 
   const monsterWidth = Math.ceil(spriteWidth / 3);
   const monsterHeight = Math.ceil(spriteHeight / 4);
@@ -37,9 +35,7 @@ export const getMonsterSprites = async (data, monsterName) => {
       const index = row * 3 + col + 1;
       const left = col * monsterWidth;
       const top = row * monsterHeight;
-      console.debug(
-        `    Cropping ${left},${top} for ${monsterWidth}x${monsterHeight} from ${monsterFilename}`
-      );
+      console.debug(`    Cropping ${left},${top} for ${monsterWidth}x${monsterHeight} from ${monsterFilename}`);
 
       // NOTE: This has to be done in two steps because of some bug with sharp.
       const extracted = await sharp(monsterFilename)
@@ -51,11 +47,9 @@ export const getMonsterSprites = async (data, monsterName) => {
         })
         .toBuffer();
 
-      await sharp(extracted)
-        .trim({
-          background: "rgba(0, 0, 0, 0)",
-        })
-        .toFile(`${monsterFolder}/${index}.png`);
+      // NOTE: Currently, the trim removes the `cutebee`'s "shadow" because it's only 1 pixel thick.
+      //       There should be support for it eventually, but for now we just have to live with it 🤷‍♂️
+      await sharp(extracted).trim().toFile(`${monsterFolder}/${index}.png`);
     }
   }
 };
