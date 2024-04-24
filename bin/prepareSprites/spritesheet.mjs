@@ -3,7 +3,7 @@ import fs from "fs";
 import sharp from "sharp";
 import Spritesmith from "spritesmith";
 
-export const generateSpriteSheet = async (monsterNames) => {
+export async function generateMonsterSpriteSheet(monsterNames) {
   // Create the hashmap
   const anchors = new Map();
   const duplicates = new Map();
@@ -73,94 +73,274 @@ export const generateSpriteSheet = async (monsterNames) => {
     }
   }
 
-  Spritesmith.run(
-    {
-      algorithm: "binary-tree",
-      src: images,
-    },
-    (error, result) => {
-      if (error) throw error;
+  return new Promise((resolve) => {
+    Spritesmith.run(
+      {
+        algorithm: "binary-tree",
+        src: images,
+      },
+      (error, result) => {
+        if (error) throw error;
 
-      const output = `./spritesheet.png`;
+        const output = `./monsters.png`;
 
-      fs.writeFileSync(output, result.image);
-      const coordinates = result.coordinates;
+        fs.writeFileSync(output, result.image);
+        const coordinates = result.coordinates;
 
-      // Add references
-      for (const [duplicate, reference] of duplicates) {
-        coordinates[duplicate] = coordinates[reference];
-      }
+        // Add references
+        for (const [duplicate, reference] of duplicates) {
+          coordinates[duplicate] = coordinates[reference];
+        }
 
-      const spritesheet = {
-        frames: {},
-        meta: {
-          format: "RGBA8888",
-          image: "spritesheet.png",
-          scale: 1,
-          size: {
-            w: result.properties.width,
-            h: result.properties.height,
+        const spritesheet = {
+          frames: {},
+          meta: {
+            format: "RGBA8888",
+            image: "monsters.png",
+            scale: 1,
+            size: {
+              w: result.properties.width,
+              h: result.properties.height,
+            },
           },
-        },
-        animations: {},
-      };
-
-      // Add the frames to the spritesheet
-      for (const key of Object.keys(coordinates).sort()) {
-        const fixedKey = key
-          .replace("./fixed/", "")
-          .replace("/", "_")
-          .replace(".png", "");
-
-        spritesheet.frames[fixedKey] = {
-          // TODO: Figure out anchor point based on the shadow
-          anchor: {
-            x: anchors.get(key),
-            y: 1,
-          },
-          frame: {
-            x: coordinates[key].x,
-            y: coordinates[key].y,
-            w: coordinates[key].width,
-            h: coordinates[key].height,
-          },
+          animations: {},
         };
+
+        // Add the frames to the spritesheet
+        for (const key of Object.keys(coordinates).sort()) {
+          const fixedKey = key
+            .replace("./fixed/", "")
+            .replace("/", "_")
+            .replace(".png", "");
+
+          spritesheet.frames[fixedKey] = {
+            // TODO: Figure out anchor point based on the shadow
+            anchor: {
+              x: anchors.get(key),
+              y: 1,
+            },
+            frame: {
+              x: coordinates[key].x,
+              y: coordinates[key].y,
+              w: coordinates[key].width,
+              h: coordinates[key].height,
+            },
+          };
+        }
+
+        // Add the animations to the spritesheet
+        for (const monsterName of monsterNames) {
+          spritesheet.animations[`${monsterName}_N`] = [
+            `${monsterName}_10`,
+            `${monsterName}_11`,
+            `${monsterName}_12`,
+            `${monsterName}_11`,
+          ];
+          spritesheet.animations[`${monsterName}_E`] = [
+            `${monsterName}_7`,
+            `${monsterName}_8`,
+            `${monsterName}_9`,
+            `${monsterName}_8`,
+          ];
+          spritesheet.animations[`${monsterName}_S`] = [
+            `${monsterName}_1`,
+            `${monsterName}_2`,
+            `${monsterName}_3`,
+            `${monsterName}_2`,
+          ];
+          spritesheet.animations[`${monsterName}_W`] = [
+            `${monsterName}_4`,
+            `${monsterName}_5`,
+            `${monsterName}_6`,
+            `${monsterName}_5`,
+          ];
+        }
+
+        fs.writeFileSync("monsters.json", JSON.stringify(spritesheet, null, 2));
+
+        console.debug("  Created spritesheet & json!");
+        resolve();
+      },
+    );
+  });
+}
+
+const FILE_REGEX =
+  /(?<tileset>[a-z0-9_]+)_(?<x>\d+)_(?<y>\d+)_(?<width>\d+)_(?<height>\d+)\.png$/;
+
+function mergeRectangles(rectangles) {
+  const mergedRectangles = [];
+
+  for (const rect of rectangles) {
+    let merged = false;
+
+    for (let i = 0; i < mergedRectangles.length; i++) {
+      const mergedRect = mergedRectangles[i];
+
+      const xOverlap =
+        rect.x + rect.width >= mergedRect.x &&
+        rect.x <= mergedRect.x + mergedRect.width;
+      const yOverlap =
+        rect.y + rect.height >= mergedRect.y &&
+        rect.y <= mergedRect.y + mergedRect.height;
+
+      if (xOverlap && yOverlap) {
+        mergedRectangles[i] = {
+          x: Math.min(rect.x, mergedRect.x),
+          y: Math.min(rect.y, mergedRect.y),
+          width:
+            Math.max(rect.x + rect.width, mergedRect.x + mergedRect.width) -
+            Math.min(rect.x, mergedRect.x),
+          height:
+            Math.max(rect.y + rect.height, mergedRect.y + mergedRect.height) -
+            Math.min(rect.y, mergedRect.y),
+        };
+        merged = true;
+        break;
       }
-
-      // Add the animations to the spritesheet
-      for (const monsterName of monsterNames) {
-        spritesheet.animations[`${monsterName}_N`] = [
-          `${monsterName}_10`,
-          `${monsterName}_11`,
-          `${monsterName}_12`,
-          `${monsterName}_11`,
-        ];
-        spritesheet.animations[`${monsterName}_E`] = [
-          `${monsterName}_7`,
-          `${monsterName}_8`,
-          `${monsterName}_9`,
-          `${monsterName}_8`,
-        ];
-        spritesheet.animations[`${monsterName}_S`] = [
-          `${monsterName}_1`,
-          `${monsterName}_2`,
-          `${monsterName}_3`,
-          `${monsterName}_2`,
-        ];
-        spritesheet.animations[`${monsterName}_W`] = [
-          `${monsterName}_4`,
-          `${monsterName}_5`,
-          `${monsterName}_6`,
-          `${monsterName}_5`,
-        ];
-      }
-
-      fs.writeFileSync(
-        `./spritesheet.json`,
-        JSON.stringify(spritesheet, null, 2)
-      );
-
-      console.debug("  Created spritesheet & json!");
     }
-  );
-};
+
+    if (!merged) {
+      mergedRectangles.push(rect);
+    }
+  }
+
+  return mergedRectangles;
+}
+
+export async function generateTilesSpriteSheet(tilesetNames) {
+  const allDimensions = [];
+  const allMergedDimensions = [];
+  const images = [];
+
+  for (const tilesetName of tilesetNames) {
+    const dir = `./fixed/${tilesetName}`;
+    if (!fs.existsSync(dir)) {
+      console.debug("Tileset", tilesetName, "isn't used for maps.");
+      continue;
+    }
+
+    // Get a list of all the dimensions we need to add
+    let dimensions = [];
+    for (const file of fs.readdirSync(dir)) {
+      const results = FILE_REGEX.exec(file);
+      if (!results) continue; // Base file, or misc. file
+      dimensions.push({
+        tilesetName: tilesetName,
+        x: Number.parseInt(results.groups.x),
+        y: Number.parseInt(results.groups.y),
+        width: Number.parseInt(results.groups.width),
+        height: Number.parseInt(results.groups.height),
+      });
+    }
+
+    dimensions.sort(function (a, b) {
+      const xDif = a.x - b.x;
+      if (xDif) return xDif;
+      return a.y - b.y;
+    });
+
+    // Group the dimensions
+    let lastMergedLen = 1;
+    let mergedDimensions = [];
+    do {
+      lastMergedLen = mergedDimensions.length;
+      mergedDimensions = mergeRectangles(dimensions);
+    } while (lastMergedLen !== mergedDimensions.length);
+    for (const mergedDimension of mergedDimensions)
+      mergedDimension.tilesetName = tilesetName;
+
+    // Create the grouped dimension images
+    for (const mergedDimension of mergedDimensions) {
+      const outputName =
+        dir +
+        `/${tilesetName}_${mergedDimension.x}_${mergedDimension.y}_${mergedDimension.width}_${mergedDimension.height}.png`;
+
+      // Add the image to our list
+      images.push(outputName);
+
+      if (fs.existsSync(outputName)) continue; // Already have the image
+      await sharp(dir + "/base.png")
+        .extract({
+          left: mergedDimension.x,
+          top: mergedDimension.y,
+          width: mergedDimension.width,
+          height: mergedDimension.height,
+        })
+        .toFile(outputName);
+    }
+
+    // Push them all in to the larger arrays
+    allDimensions.push(...dimensions);
+    allMergedDimensions.push(...mergedDimensions);
+  }
+
+  return new Promise((resolve) => {
+    Spritesmith.run(
+      {
+        algorithm: "binary-tree",
+        src: images,
+      },
+      (error, result) => {
+        if (error) throw error;
+
+        const output = `./map.png`;
+
+        fs.writeFileSync(output, result.image);
+        const coordinates = result.coordinates;
+
+        const spritesheet = {
+          frames: {},
+          meta: {
+            format: "RGBA8888",
+            image: "map.png",
+            scale: 1,
+            size: {
+              w: result.properties.width,
+              h: result.properties.height,
+            },
+          },
+          animations: {},
+        };
+
+        // Add the dimensions to the spritesheet
+        for (const key of Object.keys(coordinates).sort()) {
+          const results = FILE_REGEX.exec(key);
+          const tileset = results.groups.tileset;
+          const x = Number.parseInt(results.groups.x);
+          const y = Number.parseInt(results.groups.y);
+          const width = Number.parseInt(results.groups.width);
+          const height = Number.parseInt(results.groups.height);
+
+          for (let i = 0; i < allDimensions.length; i++) {
+            const dimension = allDimensions[i];
+            if (dimension.tilesetName !== tileset) continue;
+            if (dimension.x < x) continue;
+            if (dimension.x > x + width) continue;
+            if (dimension.y < y) continue;
+            if (dimension.y > y + height) continue;
+
+            // We found the image for this dimension
+            spritesheet.frames[
+              `${tileset}_${dimension.x}_${dimension.y}_${dimension.width}_${dimension.height}`
+            ] = {
+              x: coordinates[key].x + (dimension.x - x),
+              y: coordinates[key].y + (dimension.y - y),
+              w: dimension.width,
+              h: dimension.height,
+            };
+
+            // Remove the dimension now that we've found it
+            allDimensions.splice(i, 1);
+            i--;
+          }
+        }
+
+        fs.writeFileSync("map.json", JSON.stringify(spritesheet, null, 2));
+
+        console.debug("  Created spritesheet & json!");
+        resolve();
+      },
+    );
+  });
+}

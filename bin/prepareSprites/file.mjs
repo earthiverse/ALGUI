@@ -27,7 +27,7 @@ export const ensureFolderExists = (path) => {
   }
 };
 
-export const downloadSkin = async (data) => {
+export const downloadImage = async (data) => {
   const originalFilename = `./original${url.parse(data.file).pathname}`;
   const overrideFilename = `./overrides${url.parse(data.file).pathname}`;
 

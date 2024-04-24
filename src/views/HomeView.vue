@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import PixiTest from "../components/PixiTest.vue";
+import GameCanvas from "@/components/game/GameCanvas.vue";
 </script>
 
 <template>
   <main>
-    <PixiTest />
+    <GameCanvas />
   </main>
 </template>

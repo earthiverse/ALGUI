@@ -35,9 +35,11 @@ export const getMonsterSprites = async (data, monsterName) => {
       const index = row * 3 + col + 1;
       const left = col * monsterWidth;
       const top = row * monsterHeight;
-      console.debug(`    Cropping ${left},${top} for ${monsterWidth}x${monsterHeight} from ${monsterFilename}`);
+      console.debug(
+        `    Cropping ${left},${top} for ${monsterWidth}x${monsterHeight} from ${monsterFilename}`,
+      );
 
-      // NOTE: This has to be done in two steps because of some bug with sharp.
+      // TODO: This has to be done in two steps because of some bug with sharp.
       const extracted = await sharp(monsterFilename)
         .extract({
           left: left,
@@ -47,9 +49,35 @@ export const getMonsterSprites = async (data, monsterName) => {
         })
         .toBuffer();
 
-      // NOTE: Currently, the trim removes the `cutebee`'s "shadow" because it's only 1 pixel thick.
-      //       There should be support for it eventually, but for now we just have to live with it 🤷‍♂️
-      await sharp(extracted).trim().toFile(`${monsterFolder}/${index}.png`);
+      await sharp(extracted)
+        .trim({ lineArt: true })
+        .toFile(`${monsterFolder}/${index}.png`);
     }
   }
+};
+
+export async function getTilesetTiles(data, key) {
+  const originalFilename = `./original${url.parse(data.file).pathname}`;
+  const tilesetFolder = `./fixed/${data.tilesetName}`;
+  const tilesetFilename = `${tilesetFolder}/base.png`;
+  ensureFolderExists(tilesetFilename);
+
+  // Copy the base image over if it doesn't exist yet
+  if (!fs.existsSync(tilesetFilename))
+    fs.copyFileSync(originalFilename, tilesetFilename);
+
+  const tileFilename = `${tilesetFolder}/${key}.png`;
+  if (fs.existsSync(tileFilename)) return; // We already have the tile
+
+  const image = sharp(originalFilename);
+
+  // Save the image
+  await image
+    .extract({
+      left: data.x,
+      top: data.y,
+      width: data.width,
+      height: data.height,
+    })
+    .toFile(tileFilename);
 };

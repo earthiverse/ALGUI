@@ -3,10 +3,11 @@
 </template>
 
 <script lang="ts">
+import { MonsterName } from "alclient";
 import { Application } from "@pixi/app";
-import { Assets } from "@pixi/assets";
-import { Spritesheet } from "@pixi/spritesheet";
 import { AnimatedSprite } from "@pixi/sprite-animated";
+
+import { MonsterSprite } from "./MonsterSprite.ts";
 
 export default {
   methods: {
@@ -19,24 +20,14 @@ export default {
         view: canvas,
       });
 
-      const sheetJson = await fetch("./src/assets/monsters.json");
-      const sheetImage = await Assets.load("./src/assets/monsters.png");
+      setInterval(async () => {
+        const y = Math.random() * window.innerHeight;
+        const x = Math.random() * window.innerWidth;
 
-      console.debug("Sheet image");
-      console.debug(sheetImage);
-
-      console.debug("Sheet json");
-      console.debug(sheetJson);
-
-      const spritesheet = new Spritesheet(sheetImage, await sheetJson.json());
-
-      const fun = await spritesheet.parse();
-
-      console.debug("fun");
-      console.debug(fun);
-
-      console.debug("spritesheet");
-      console.debug(spritesheet);
+        const monster = await MonsterSprite.createMonster("goo");
+        monster.position.set(x, y);
+        app.stage.addChild(monster);
+      }, 10);
 
       let y = 0;
       for (const monster of [
@@ -46,13 +37,14 @@ export default {
         "squig",
         "rat",
         "mole",
-        "goo"
-      ]) {
+        "goo",
+      ] as MonsterName[]) {
         let x = 50;
         let sprite: AnimatedSprite;
         for (const position of ["N", "E", "S", "W"]) {
-          sprite = new AnimatedSprite(
-            spritesheet.animations[`${monster}_${position}`]
+          sprite = await MonsterSprite.createMonster(
+            monster,
+            position as "N" | "E" | "S" | "W",
           );
           if (position == "N") {
             y += sprite.height + 25;
@@ -61,13 +53,11 @@ export default {
           sprite.scale.set(1.5);
           sprite.position.set(x, y);
           sprite.updateAnchor = true;
-          sprite.animationSpeed = 0.1;
-          sprite.play();
           app.stage.addChild(sprite);
           x += sprite.width + 25;
         }
       }
-    }
+    },
   },
 
   mounted() {
@@ -82,3 +72,4 @@ export default {
   min-height: 100%;
 }
 </style>
+./MonsterSprite.js
