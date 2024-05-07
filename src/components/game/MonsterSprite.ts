@@ -1,7 +1,7 @@
 import { MonsterName } from "alclient";
+import { Assets } from "@pixi/assets";
 import { AnimatedSprite } from "@pixi/sprite-animated";
 import { Spritesheet } from "@pixi/spritesheet";
-import { Assets } from "@pixi/assets";
 
 // TODO: Direction should be based off the direction it's heading
 
@@ -12,9 +12,10 @@ export class MonsterSprite extends AnimatedSprite {
   private constructor(name: MonsterName, direction: "N" | "E" | "S" | "W") {
     super(MonsterSprite.spritesheet.animations[`${name}_${direction}`]);
 
+    this.cullable = true;
+
     // Start animation
-    this.updateAnchor = true;
-    this.animationSpeed = 0.1;
+    this.animationSpeed = 1 / 10;
     this.play();
   }
 
@@ -22,8 +23,8 @@ export class MonsterSprite extends AnimatedSprite {
     name: MonsterName,
     direction: "N" | "E" | "S" | "W" = "S",
   ): Promise<MonsterSprite> {
+    if (this.promise) await this.promise; // We are making the spritesheet
     if (!this.spritesheet) {
-      if (this.promise) await this.promise; // We are making the spritesheet
       this.promise = new Promise<void>(async (resolve) => {
         // TODO: How do these paths work!?
         const sheetJson = await fetch("src/assets/monsters.json");

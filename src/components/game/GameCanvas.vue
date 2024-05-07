@@ -7,6 +7,7 @@ import { MonsterName } from "alclient";
 import { Application } from "@pixi/app";
 import { AnimatedSprite } from "@pixi/sprite-animated";
 
+import { MapContainer } from "./MapContainer.ts";
 import { MonsterSprite } from "./MonsterSprite.ts";
 
 export default {
@@ -16,9 +17,13 @@ export default {
 
       const app = new Application({
         resizeTo: canvas,
-        antialias: true,
+        antialias: false,
         view: canvas,
       });
+      app.stage.sortableChildren = true;
+
+      const map = await MapContainer.createMap("main");
+      app.stage.addChild(map);
 
       setInterval(async () => {
         const y = Math.random() * window.innerHeight;
@@ -68,8 +73,7 @@ export default {
 
 <style scoped>
 #pixi {
-  min-width: 100%;
-  min-height: 100%;
+  min-width: 100vw;
+  min-height: 100vh;
 }
 </style>
-./MonsterSprite.js

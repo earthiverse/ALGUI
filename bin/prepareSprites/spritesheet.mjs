@@ -208,12 +208,12 @@ function mergeRectangles(rectangles) {
   return mergedRectangles;
 }
 
-export async function generateTilesSpriteSheet(tilesetNames) {
+export async function generateTilesSpriteSheet(gGeometry, gTileset) {
   const allDimensions = [];
   const allMergedDimensions = [];
   const images = [];
 
-  for (const tilesetName of tilesetNames) {
+  for (const tilesetName of Object.keys(gTileset).sort()) {
     const dir = `./fixed/${tilesetName}`;
     if (!fs.existsSync(dir)) {
       console.debug("Tileset", tilesetName, "isn't used for maps.");
@@ -324,15 +324,53 @@ export async function generateTilesSpriteSheet(tilesetNames) {
             spritesheet.frames[
               `${tileset}_${dimension.x}_${dimension.y}_${dimension.width}_${dimension.height}`
             ] = {
-              x: coordinates[key].x + (dimension.x - x),
-              y: coordinates[key].y + (dimension.y - y),
-              w: dimension.width,
-              h: dimension.height,
+              frame: {
+                x: coordinates[key].x + (dimension.x - x),
+                y: coordinates[key].y + (dimension.y - y),
+                w: dimension.width,
+                h: dimension.height,
+              },
             };
 
             // Remove the dimension now that we've found it
             allDimensions.splice(i, 1);
             i--;
+          }
+        }
+
+        // Add the indexes as animations
+        // TODO: Some of these are actually animated
+        for (const mapName in gGeometry) {
+          const mapGeometry = gGeometry[mapName];
+          for (let tileNo = 0; tileNo < mapGeometry.tiles.length; tileNo++) {
+            const tileData = mapGeometry.tiles[tileNo];
+            const tilesheet = tileData[0];
+            const tilesetData = gTileset[tilesheet];
+            const x = tileData[1];
+            const y = tileData[2];
+            const width = tileData[3];
+            const height = tileData[4] ?? width;
+            if (tilesetData.frames) {
+              const frames = [];
+              for (let frameNo = 0; frameNo < tilesetData.frames; frameNo++) {
+                const frameX = x + frameNo * tilesetData.frame_width;
+                const frame = `${tilesheet}_${frameX}_${y}_${width}_${height}`;
+                frames.push(frame);
+              }
+              for (
+                let frameNo = tilesetData.frames - 2;
+                frameNo > 0;
+                frameNo--
+              ) {
+                const frameX = x + frameNo * tilesetData.frame_width;
+                const frame = `${tilesheet}_${frameX}_${y}_${width}_${height}`;
+                frames.push(frame);
+              }
+              spritesheet.animations[`${mapName}_${tileNo}`] = frames;
+            } else {
+              const frame = `${tilesheet}_${x}_${y}_${width}_${height}`;
+              spritesheet.animations[`${mapName}_${tileNo}`] = [frame];
+            }
           }
         }
 

@@ -31,17 +31,34 @@ export const findTiles = (G, mapName) => {
     const y = tile[2];
     const width = tile[3];
     const height = tile[4] ?? width;
+    const tilesetData = G.tilesets[tilesetName];
 
-    const key = `${tilesetName}_${x}_${y}_${width}_${height}`;
-    if (tiles.has(key)) continue;
-    tiles.set(key, {
-      tilesetName: tilesetName,
-      file: G.tilesets[tilesetName].file,
-      x: x,
-      y: y,
-      width: width,
-      height: height,
-    });
+    if (tilesetData.frames) {
+      for (let frameNo = 0; frameNo < tilesetData.frames; frameNo++) {
+        const frameX = x + frameNo * tilesetData.frame_width;
+        const key = `${tilesetName}_${frameX}_${y}_${width}_${height}`;
+        if (tiles.has(key)) continue;
+        tiles.set(key, {
+          tilesetName: tilesetName,
+          file: tilesetData.file,
+          x: frameX,
+          y: y,
+          width: width,
+          height: height,
+        });
+      }
+    } else {
+      const key = `${tilesetName}_${x}_${y}_${width}_${height}`;
+      if (tiles.has(key)) continue;
+      tiles.set(key, {
+        tilesetName: tilesetName,
+        file: tilesetData.file,
+        x: x,
+        y: y,
+        width: width,
+        height: height,
+      });
+    }
   }
 
   return tiles;

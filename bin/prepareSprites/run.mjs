@@ -52,7 +52,7 @@ for (const mapName in G.maps) {
     await getTilesetTiles(tileDatum, key);
   }
 }
-await generateTilesSpriteSheet(Object.keys(G.tilesets).sort());
+await generateTilesSpriteSheet(G.geometry, G.tilesets);
 
 // Copy to public folder
 fs.copyFileSync("map.json", "../../src/assets/map.json");
