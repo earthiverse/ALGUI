@@ -31,7 +31,8 @@ export default {
 
         const monster = await MonsterSprite.createMonster("goo");
         monster.position.set(x, y);
-        app.stage.addChild(monster);
+        monster.zIndex = y;
+        map.addChild(monster);
       }, 10);
 
       let y = 0;
@@ -58,7 +59,8 @@ export default {
           sprite.scale.set(1.5);
           sprite.position.set(x, y);
           sprite.updateAnchor = true;
-          app.stage.addChild(sprite);
+          sprite.zIndex = y;
+          map.addChild(sprite);
           x += sprite.width + 25;
         }
       }

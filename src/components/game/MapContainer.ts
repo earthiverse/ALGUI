@@ -1,6 +1,6 @@
 import { GData, GGeometry, MapName } from "alclient";
 import { Assets } from "@pixi/assets";
-import { Container } from "@pixi/display";
+import { Container, DisplayObject } from "@pixi/display";
 import { Spritesheet } from "@pixi/spritesheet";
 import { Sprite } from "@pixi/sprite";
 import { TilingSprite } from "@pixi/sprite-tiling";
@@ -32,15 +32,16 @@ class Background extends TilingSprite {
 }
 
 export class MapContainer extends Container {
-  public static g: GData;
-  public static spritesheet: Spritesheet;
-  public static promise: Promise<unknown>;
+  private static g: GData;
+  private static spritesheet: Spritesheet;
+  private static promise: Promise<unknown>;
 
   private background: Container;
   private foreground: Container;
 
   private constructor(map: MapName) {
     super();
+    this.sortableChildren = true;
 
     const geometry = MapContainer.g.geometry[map] as GGeometry;
     const width = geometry.max_x - geometry.min_x;
@@ -87,6 +88,8 @@ export class MapContainer extends Container {
     console.debug(`Rendering ${map} foreground...`);
     if (geometry.groups) {
       for (const group of geometry.groups) {
+        const groupContainer = new Container();
+        let maxY = Number.MIN_SAFE_INTEGER;
         for (const [index, x1, y1, x2, y2] of group) {
           const key = `${map}_${index}`;
           const textures = MapContainer.spritesheet.animations[key];
@@ -100,20 +103,27 @@ export class MapContainer extends Container {
                   : new Sprite(textures[0]);
               fg.x = x;
               fg.y = y;
-              fg.zIndex = y1;
-              fg.cullable = true;
-              this.foreground.addChild(fg);
+              groupContainer.addChild(fg);
+
+              if (y + height > maxY) maxY = y + height;
             }
           }
+          groupContainer.zIndex = maxY;
+          groupContainer.cullable = true;
+          this.foreground.addChild(groupContainer);
         }
       }
     }
 
-    this.addChild(this.background);
-    this.addChild(this.foreground);
+    super.addChild(this.background);
+    super.addChild(this.foreground);
   }
 
-  public static async createMap(map: MapName): Promise<Container> {
+  public addChild<U extends DisplayObject[]>(...children: U): U[0] {
+    return this.foreground.addChild(...children);
+  }
+
+  public static async createMap(map: MapName): Promise<MapContainer> {
     if (this.promise) await this.promise; // We are making the spritesheet
     if (!this.spritesheet) {
       this.promise = new Promise<void>(async (resolve) => {
