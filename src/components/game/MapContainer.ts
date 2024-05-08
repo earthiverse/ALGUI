@@ -1,4 +1,4 @@
-import { GData, GGeometry, MapName } from "alclient";
+import type { GData, GGeometry, MapName } from "alclient";
 import { Assets } from "@pixi/assets";
 import { Container, DisplayObject } from "@pixi/display";
 import { Spritesheet } from "@pixi/spritesheet";
@@ -6,6 +6,9 @@ import { Sprite } from "@pixi/sprite";
 import { TilingSprite } from "@pixi/sprite-tiling";
 import { AnimatedSprite } from "@pixi/sprite-animated";
 import { Texture } from "@pixi/core";
+
+// TODO: Can we get https://api.pixijs.io/@pixi/tilemap/Tilemap.html working?
+//       If not, can we group together the background, and render that?
 
 class Background extends TilingSprite {
   protected textures: Texture[];

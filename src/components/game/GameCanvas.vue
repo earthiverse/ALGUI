@@ -3,72 +3,24 @@
 </template>
 
 <script lang="ts">
-import { MonsterName } from "alclient";
-import { Application } from "@pixi/app";
-import { AnimatedSprite } from "@pixi/sprite-animated";
-
-import { MapContainer } from "./MapContainer.ts";
-import { MonsterSprite } from "./MonsterSprite.ts";
+import socketio from "socket.io-client";
+import { changeMap, initialize } from "./Game.ts";
 
 export default {
   methods: {
-    async drawPixi() {
-      var canvas = document.getElementById("pixi") as HTMLCanvasElement;
-
-      const app = new Application({
-        resizeTo: canvas,
-        antialias: false,
-        view: canvas,
+    async loadSocket() {
+      const socket = socketio("wss://usd1.adventure.land:2096", {
+        autoConnect: false,
+        query: {},
+        reconnection: true,
+        transports: ["websocket"],
       });
-      app.stage.sortableChildren = true;
-
-      const map = await MapContainer.createMap("main");
-      app.stage.addChild(map);
-
-      setInterval(async () => {
-        const y = Math.random() * window.innerHeight;
-        const x = Math.random() * window.innerWidth;
-
-        const monster = await MonsterSprite.createMonster("goo");
-        monster.position.set(x, y);
-        monster.zIndex = y;
-        map.addChild(monster);
-      }, 10);
-
-      let y = 0;
-      for (const monster of [
-        "slenderman",
-        "chestm",
-        "dragold",
-        "squig",
-        "rat",
-        "mole",
-        "goo",
-      ] as MonsterName[]) {
-        let x = 50;
-        let sprite: AnimatedSprite;
-        for (const position of ["N", "E", "S", "W"]) {
-          sprite = await MonsterSprite.createMonster(
-            monster,
-            position as "N" | "E" | "S" | "W",
-          );
-          if (position == "N") {
-            y += sprite.height + 25;
-            console.log(monster, "height is", sprite.height);
-          }
-          sprite.scale.set(1.5);
-          sprite.position.set(x, y);
-          sprite.updateAnchor = true;
-          sprite.zIndex = y;
-          map.addChild(sprite);
-          x += sprite.width + 25;
-        }
-      }
+      socket.connect();
     },
   },
-
-  mounted() {
-    this.drawPixi();
+  async mounted() {
+    initialize();
+    await changeMap("main");
   },
 };
 </script>

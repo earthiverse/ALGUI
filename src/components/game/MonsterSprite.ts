@@ -1,4 +1,4 @@
-import { MonsterName } from "alclient";
+import type { MonsterName } from "alclient";
 import { Assets } from "@pixi/assets";
 import { AnimatedSprite } from "@pixi/sprite-animated";
 import { Spritesheet } from "@pixi/spritesheet";
