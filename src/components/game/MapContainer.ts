@@ -9,7 +9,7 @@ import {
   TilingSprite,
   type ContainerChild,
 } from "pixi.js";
-import { initialize } from "./Game";
+import { APP } from "./Game";
 
 export class MapContainer extends Container {
   private static g: GData;
@@ -27,7 +27,7 @@ export class MapContainer extends Container {
     const width = geometry.max_x - geometry.min_x;
     const height = geometry.max_y - geometry.min_y;
 
-    const app = initialize();
+    const app = APP;
     const renderer = app.renderer;
 
     //// Background

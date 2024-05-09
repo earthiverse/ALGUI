@@ -1,22 +1,33 @@
 import { Application } from "pixi.js";
+import { Viewport } from "pixi-viewport";
 import type { MapName } from "alclient";
 import { MapContainer } from "./MapContainer";
 
-let APP: Application;
+export let APP: Application;
+export let VIEWPORT: Viewport;
 let MAP: MapContainer;
 
-export function initialize(): Application {
+export async function initialize(): Promise<Application> {
   if (APP) return APP;
 
   // Create the PixiJS Application
   const canvas = document.getElementById("pixi") as HTMLCanvasElement;
   APP = new Application();
-  APP.init({
+  await APP.init({
     preference: "webgpu",
     resizeTo: canvas,
     antialias: false,
     view: canvas,
   });
+
+  VIEWPORT = new Viewport({
+    events: APP.renderer.events,
+    screenWidth: window.innerWidth,
+    screenHeight: window.innerHeight,
+  });
+  VIEWPORT.drag().pinch().wheel();
+  APP.stage.addChild(VIEWPORT);
+
   return APP;
 }
 
@@ -85,7 +96,10 @@ export async function changeMap(map: MapName): Promise<MapContainer> {
 
   // Assign the new map
   MAP = newMap;
-  APP.stage.addChild(MAP);
+  VIEWPORT.addChild(MAP);
+
+  VIEWPORT.worldHeight = MAP.height;
+  VIEWPORT.worldWidth = MAP.width;
 
   return MAP;
 }

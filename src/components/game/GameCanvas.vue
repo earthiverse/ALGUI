@@ -19,7 +19,7 @@ export default {
     },
   },
   async mounted() {
-    initialize();
+    await initialize();
     await changeMap("main");
   },
 };
