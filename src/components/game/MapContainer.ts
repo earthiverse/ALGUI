@@ -1,45 +1,22 @@
 import type { GData, GGeometry, MapName } from "alclient";
-import { Assets } from "@pixi/assets";
-import { Container, DisplayObject } from "@pixi/display";
-import { Spritesheet } from "@pixi/spritesheet";
-import { Sprite } from "@pixi/sprite";
-import { TilingSprite } from "@pixi/sprite-tiling";
-import { AnimatedSprite } from "@pixi/sprite-animated";
-import { Texture } from "@pixi/core";
-
-// TODO: Can we get https://api.pixijs.io/@pixi/tilemap/Tilemap.html working?
-//       If not, can we group together the background, and render that?
-
-class Background extends TilingSprite {
-  protected textures: Texture[];
-  protected currentTexture = 0;
-  static CHANGE_MS = 1000;
-
-  public constructor(textures: Texture[], width: number, height: number) {
-    super(textures[0], width, height);
-    this.textures = textures;
-    this.zIndex = Number.MIN_SAFE_INTEGER;
-    if (textures.length > 1)
-      setTimeout(() => this.changeTexture(), Background.CHANGE_MS);
-  }
-
-  protected changeTexture() {
-    if (this.destroyed) return;
-
-    // Change texture
-    this.currentTexture = (this.currentTexture + 1) % this.textures.length;
-    this.texture = this.textures[this.currentTexture];
-
-    setTimeout(() => this.changeTexture(), Background.CHANGE_MS);
-  }
-}
+import {
+  AnimatedSprite,
+  Assets,
+  Container,
+  RenderTexture,
+  Sprite,
+  Spritesheet,
+  TilingSprite,
+  type ContainerChild,
+} from "pixi.js";
+import { initialize } from "./Game";
 
 export class MapContainer extends Container {
   private static g: GData;
   private static spritesheet: Spritesheet;
   private static promise: Promise<unknown>;
 
-  private background: Container;
+  private background: AnimatedSprite;
   private foreground: Container;
 
   private constructor(map: MapName) {
@@ -50,45 +27,90 @@ export class MapContainer extends Container {
     const width = geometry.max_x - geometry.min_x;
     const height = geometry.max_y - geometry.min_y;
 
-    this.background = new Container();
-    this.background.sortableChildren = false;
-    this.foreground = new Container();
-    this.foreground.sortableChildren = true;
-    this.foreground.zIndex = Number.MAX_SAFE_INTEGER;
+    const app = initialize();
+    const renderer = app.renderer;
 
-    // Background
+    //// Background
     console.debug(`Rendering ${map} background...`);
+
+    // Create the background layers for animation
+    const backgroundLayers = [];
+    for (let i = 0; i < 3; i++) {
+      backgroundLayers.push(
+        RenderTexture.create({ width: width, height: height }),
+      );
+    }
+
+    // Render the default background
     if (geometry.default) {
       const key = `${map}_${geometry.default}`;
       const textures = MapContainer.spritesheet.animations[key];
-      const bg = new Background(textures, width, height);
-      bg.x = geometry.min_x;
-      bg.y = geometry.min_y;
-      this.background.addChild(bg);
+
+      for (let i = 0; i < textures.length; i++) {
+        const texture = textures[i];
+        const tile = new TilingSprite({
+          texture: texture,
+          width: width,
+          height: height,
+        });
+        renderer.render({
+          clear: false,
+          container: tile,
+          target: backgroundLayers[i],
+        });
+        tile.destroy();
+      }
     }
+
+    // Render the placements
     if (geometry.placements) {
       for (const [index, x1, y1, x2, y2] of geometry.placements) {
         const key = `${map}_${index}`;
         const textures = MapContainer.spritesheet.animations[key];
-        const width = textures[0].width;
-        const height = textures[0].height;
-        for (let x = x1; x <= (x2 ?? x1); x += width) {
-          for (let y = y1; y <= (y2 ?? y1); y += height) {
-            const bg =
-              textures.length > 1
-                ? new AnimatedSprite(textures)
-                : new Sprite(textures[0]);
-            bg.x = x;
-            bg.y = y;
-            bg.cullable = true;
-            this.background.addChild(bg);
+        if (textures.length === 1) textures.push(textures[0], textures[0]);
+        const textureWidth = textures[0].width;
+        const textureHeight = textures[0].height;
+
+        const fromX = x1 - geometry.min_x;
+        const fromY = y1 - geometry.min_y;
+        const toX = x2 === undefined ? fromX : fromX + (x2 - x1);
+        const toY = y2 === undefined ? fromY : fromY + (y2 - y1);
+
+        for (let i = 0; i < textures.length; i++) {
+          const texture = textures[i];
+          const tile = Sprite.from(texture);
+          for (let x = fromX; x <= toX; x += textureWidth) {
+            for (let y = fromY; y <= toY; y += textureHeight) {
+              tile.x = x;
+              tile.y = y;
+              renderer.render({
+                clear: false,
+                container: tile,
+                target: backgroundLayers[i],
+              });
+            }
           }
+          tile.destroy();
         }
       }
     }
 
-    // Foreground
+    // Combine the background layers into a large animated sprite
+    backgroundLayers.push(backgroundLayers[1]); // Make the animation loop nice
+    this.background = new AnimatedSprite(backgroundLayers);
+    this.background.x = geometry.min_x;
+    this.background.y = geometry.min_y;
+    this.background.animationSpeed = 1 / 30;
+    this.background.play();
+
+    //// Foreground
     console.debug(`Rendering ${map} foreground...`);
+
+    this.foreground = new Container();
+    this.foreground.sortableChildren = true;
+    this.foreground.zIndex = Number.MAX_SAFE_INTEGER;
+
+    // Render the groups
     if (geometry.groups) {
       for (const group of geometry.groups) {
         const groupContainer = new Container();
@@ -122,7 +144,7 @@ export class MapContainer extends Container {
     super.addChild(this.foreground);
   }
 
-  public addChild<U extends DisplayObject[]>(...children: U): U[0] {
+  public addChild<U extends ContainerChild[]>(...children: U): U[0] {
     return this.foreground.addChild(...children);
   }
 

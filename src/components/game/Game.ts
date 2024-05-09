@@ -1,4 +1,4 @@
-import { Application } from "@pixi/app";
+import { Application } from "pixi.js";
 import type { MapName } from "alclient";
 import { MapContainer } from "./MapContainer";
 
@@ -6,9 +6,13 @@ let APP: Application;
 let MAP: MapContainer;
 
 export function initialize(): Application {
+  if (APP) return APP;
+
   // Create the PixiJS Application
   const canvas = document.getElementById("pixi") as HTMLCanvasElement;
-  APP = new Application({
+  APP = new Application();
+  APP.init({
+    preference: "webgpu",
     resizeTo: canvas,
     antialias: false,
     view: canvas,

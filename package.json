@@ -12,17 +12,7 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "@pixi/app": "^7.4.2",
-    "@pixi/assets": "^7.4.2",
-    "@pixi/core": "^7.4.2",
-    "@pixi/display": "^7.4.2",
-    "@pixi/graphics": "^7.4.2",
-    "@pixi/layers": "^2.1.0",
-    "@pixi/sprite": "^7.4.2",
-    "@pixi/sprite-animated": "^7.4.2",
-    "@pixi/sprite-tiling": "^7.4.2",
-    "@pixi/spritesheet": "^7.4.2",
-    "@pixi/tilemap": "^5.0.1",
+    "pixi.js": "^8.1.0",
     "@vueuse/core": "^10.9.0",
     "jpegoptim-bin": "^7.1.0",
     "pinia": "^2.0",
