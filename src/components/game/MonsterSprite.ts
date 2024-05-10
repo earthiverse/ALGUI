@@ -1,7 +1,10 @@
 import type { MonsterName } from "alclient";
-import { AnimatedSprite, Assets, Spritesheet } from "pixi.js";
+import { AnimatedSprite, Assets, Spritesheet, Ticker } from "pixi.js";
 
 // TODO: Direction should be based off the direction it's heading
+
+const DEATH_FADEOUT_MS = 500;
+const DEATH_END_ROTATION = Math.PI / 4;
 
 export class MonsterSprite extends AnimatedSprite {
   public static spritesheet: Spritesheet;
@@ -15,6 +18,29 @@ export class MonsterSprite extends AnimatedSprite {
     // Start animation
     this.animationSpeed = 1 / 10;
     this.play();
+  }
+
+  public animateDeath() {
+    this.pivot.set(0.5, 0.5);
+
+    const onTick = () => {
+      if (this.destroyed) {
+        Ticker.shared.remove(onTick);
+        return;
+      }
+
+      this.alpha -= Ticker.shared.elapsedMS / DEATH_FADEOUT_MS;
+      const deathProgress = 1 - this.alpha;
+      this.rotation = deathProgress * DEATH_END_ROTATION;
+      // this.scale = 1 - deathProgress;
+
+      if (this.alpha < 0) {
+        Ticker.shared.remove(onTick);
+        this.destroy();
+      }
+    };
+
+    Ticker.shared.add(onTick);
   }
 
   public static async createMonster(

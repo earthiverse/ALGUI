@@ -5,16 +5,15 @@ import { MapContainer } from "./MapContainer";
 
 export let APP: Application;
 export let VIEWPORT: Viewport;
-let MAP: MapContainer;
+export let MAP: MapContainer;
 
-export async function initialize(): Promise<Application> {
+export async function initializeApplication(): Promise<Application> {
   if (APP) return APP;
 
   // Create the PixiJS Application
   const canvas = document.getElementById("pixi") as HTMLCanvasElement;
   APP = new Application();
   await APP.init({
-    preference: "webgpu",
     resizeTo: canvas,
     antialias: false,
     view: canvas,
@@ -25,6 +24,7 @@ export async function initialize(): Promise<Application> {
     screenWidth: window.innerWidth,
     screenHeight: window.innerHeight,
   });
+  VIEWPORT.setZoom(1.5);
   VIEWPORT.drag().pinch().wheel();
   APP.stage.addChild(VIEWPORT);
 
@@ -100,6 +100,19 @@ export async function changeMap(map: MapName): Promise<MapContainer> {
 
   VIEWPORT.worldHeight = MAP.height;
   VIEWPORT.worldWidth = MAP.width;
+
+  console.log("map");
+  console.log(MAP.x, MAP.width);
+
+  // VIEWPORT.clamp({
+  //   left: MAP.geometry.min_x,
+  //   right: MAP.geometry.max_x,
+  //   top: MAP.geometry.min_y,
+  //   bottom: MAP.geometry.max_y,
+  // }).clampZoom({
+  //   maxHeight: MAP.height,
+  //   maxWidth: MAP.width,
+  // });
 
   return MAP;
 }
